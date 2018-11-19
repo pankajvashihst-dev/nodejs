@@ -1,0 +1,155 @@
+{
+
+    "swagger": "2.0.1",
+    "info": {
+      "title": "Post Ap",
+      "description": "",
+      "version": "1.0"
+    },
+    "produces": ["application/json"],
+    "host": "202.164.42.227:3063",
+    
+    "basePath": "",
+    "paths": {
+        "/api/v1/step_one":{
+          "post": {
+              "x-swagger-router-controller": "middleware-name1",
+              "operationId": "register",
+              "tags":["User"],
+              "description": "",
+              "parameters": [
+                {
+                "name": "key",
+                "in": "formData",
+                "description": "key is required",
+                "required": true,
+                "type": "string",
+                "value":""
+                },
+                {
+                  "name": "type",
+                  "in": "formData",
+                  "description": "type is required",
+                  "required": true,
+                  "type": "string",
+                  "value":""
+                  },
+                 {
+                  "name": "security_key",
+                  "in": "header",
+                  "description": "security_key is required",
+                  "required": true,
+                  "type": "string",
+                  "value":""
+                 }
+              ],
+              "responses": {}
+            }
+          },
+        "/api/login":{
+          "post": {
+              "x-swagger-router-controller": "middleware-name1",
+              "operationId": "login",
+              "tags":["User"],
+              "description": "",
+              "parameters": [
+                
+                 {
+                  "name": "email",
+                  "in": "formData",
+                  "description": "email is required",
+                  "required": true,
+                  "type": "string",
+                  "value":""
+                 },
+                 {
+                  "name": "device_type",
+                  "in": "formData",
+                  "description": "device_type is required",
+                  "required": true,
+                  "type": "string",
+                  "value":""
+                  },
+                 {
+                  "name": "device_type",
+                  "in": "formData",
+                  "description": "device_type is required",
+                  "required": true,
+                  "type": "string",
+                  "value":""
+                  },
+                 {
+                  "name": "device_token",
+                  "in": "formData",
+                  "description": "device_token is required",
+                  "required": true,
+                  "type": "string",
+                  "value":""
+                  },
+                 {
+                  "name": "latitude",
+                  "in": "formData",
+                  "description": "latitude is required",
+                  "required": true,
+                  "type": "string",
+                  "value":""
+                  },
+                 {
+                  "name": "longitude",
+                  "in": "formData",
+                  "description": "longitude is required",
+                  "required": true,
+                  "type": "string",
+                  "value":""
+                  },
+                 {
+                    "name": "password",
+                    "in": "formData",
+                    "description": "password is required",
+                    "required": true,
+                    "type": "string",
+                    "value":""
+                 },
+                 {
+                  "name": "security_key",
+                  "in": "headers",
+                  "description": "security_key is required",
+                  "required": true,
+                  "type": "string",
+                  "value":""
+                 }
+              ],
+              "responses": {}
+            }
+          },
+        "/api/pages/:page_id":{
+          "get": {
+              "x-swagger-router-controller": "middleware-name1",
+              "operationId": "pages",
+              "tags":["User"],
+              "description": "",
+              "parameters": [
+                
+                 {
+                  "name": "security_key",
+                  "in": "headers",
+                  "description": "security_key is required",
+                  "required": true,
+                  "type": "string",
+                  "value":""
+                 },
+                 {
+                  "name": "auth_key",
+                  "in": "headers",
+                  "description": "auth_key is required",
+                  "required": true,
+                  "type": "string",
+                  "value":""
+                  }
+              ],
+              "responses": {}
+            }
+          }
+        }
+
+}
