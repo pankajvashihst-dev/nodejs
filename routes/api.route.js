@@ -12,5 +12,12 @@ module.exports = function(app){
     app.route(Config.API_ENDPOINT+'forgot_password').post(api.forgot_password);
     app.route(Config.API_ENDPOINT+'resend_otp').post(api.resend_otp);
     app.route(Config.API_ENDPOINT+'soical_login').post(api.soical_login);
+    app.route(Config.API_ENDPOINT+'address').post(api.add_address);
+    app.route(Config.API_ENDPOINT+'address/:type').get(api.get_address);
+    app.route(Config.API_ENDPOINT+'address').put(api.update_address);
+    app.route(Config.API_ENDPOINT+'create_post').post(api.create_post);
+    app.route(Config.API_ENDPOINT+'create_post').get(api.get_post);
+    app.route(Config.API_ENDPOINT+'create_post').put(api.update_post);
+    app.route(Config.API_ENDPOINT+'post_servers').get(api.post_servers);
 }
 
