@@ -31,7 +31,6 @@ class ApiController extends AppController {
 				required.email_otp=111111;
 				message="The OTP code sent to your email id";
 			}
-
 			let requestdata = await App.vaildObject(required,non_required);
 			let conditions='';
 			if (requestdata.type == 1){
@@ -39,12 +38,11 @@ class ApiController extends AppController {
 			} else {
 				conditions=" users.email= '" + requestdata.email+"'";;
 			}
-
 			let query="select * from users where "+ conditions;
 			let serverdata = await DB.first(query);
 			if(serverdata.length > 0) {
-				if((serverdata[0].email_verify==1 ||  serverdata[0].phone_verify==1)  && serverdata[0].password!='') {
-					throw (requestdata.type==1) ? "The Phone is already registered. Kindly use anothe":"The Email is already registered. Kindly use another";
+				if((serverdata[0].email_verify==1 ||  serverdata[0].phone_verify==1 || serverdata[0].id_google!=0 || serverdata[0].id_facebook!=0 || serverdata[0].id_twiter!=0)  && serverdata[0].password!='') {
+						throw (requestdata.type==1) ? "The Phone is already registered. Kindly use anothe":"The Email is already registered. Kindly use another";
 				}else{
 					requestdata.id=serverdata[0].id;
 				}
@@ -188,8 +186,6 @@ class ApiController extends AppController {
 			$this.error(res,err);
 		}
 	}
-
-
 	async update_profile(req,res){
 		try{
 			const required = {
@@ -240,6 +236,7 @@ class ApiController extends AppController {
 				}
 			});
 			let user='';
+			//console.log(login);
 			if(login.length>0){
 				user=login[0];
 				if(user.password!=requestdata.password){
@@ -259,6 +256,7 @@ class ApiController extends AppController {
 				'body':user
 			});
 		}catch(err){
+			//res.json(err);
 			$this.error(res,err);
 		}
 	}
@@ -326,7 +324,7 @@ class ApiController extends AppController {
 			let requestdata = await App.vaildObject(required,non_required);
 			let message='';
 			if(requestdata.type==2){
-				message="The OTP code sent to your Email id";
+				message="OTP sent on EMAIL";
 				let mail = {
 					from: 'admin@Postapp.com',
 					to: requestdata.users.email,
@@ -344,6 +342,8 @@ class ApiController extends AppController {
 					text: 'Your one time Password is '+requestdata.users.forgot_password+' Please Dont share with any one.Thanks You Team Postapp'
 				};
 				$this.send_mail(mail);
+			}else{
+				message="OTP sent on Phone";
 			}
 			res.status(200).json({
 				'success':true,
@@ -407,6 +407,235 @@ class ApiController extends AppController {
 				'message':"Login successfully",
 				'code':200,
 				'body':result[0]
+			});
+		}catch(err){
+			$this.error(res,err);
+		}
+	}
+
+	async add_address(req,res){
+		try{
+			const required = {
+				security_key:req.headers.security_key,
+				authorization_key:req.headers.authorization_key,
+				sender_name:req.body.sender_name,
+				address_line_1:req.body.address_line_1,
+				address_line_2:req.body.address_line_2,
+				city:req.body.city,
+				state:req.body.state,
+				zip_code:req.body.zip_code,
+				country:req.body.country,
+				latitude:req.body.latitude,
+				longitude:req.body.longitude,
+				type:req.body.type,
+				is_default:1,
+				checkexist:2
+			}	
+			const non_required= {}
+			let requestdata = await App.vaildObject(required,non_required);
+			requestdata.user_id=requestdata.users.id;
+			let id =await DB.save('users_addresses',requestdata);
+			requestdata.id=id;
+			let update_query="update users_addresses SET is_default=0 where id != "+id+" and  user_id = "+requestdata.user_id;
+			DB.Query(update_query,'update');
+			delete requestdata.users;
+			res.status(200).json({
+				'success':true,
+				'message':"Address added successfully",
+				'code':200,
+				'body':requestdata
+			});
+		}catch(err){
+			$this.error(res,err);
+		}
+	}
+
+	async get_address(req,res){
+		try{
+			const required = {
+				security_key:req.headers.security_key,
+				authorization_key:req.headers.authorization_key,
+				type:parseInt(req.params.type),
+				checkexist:2
+			}	
+			const non_required= {}
+			let requestdata = await App.vaildObject(required,non_required);
+			requestdata.user_id=requestdata.users.id;
+			let condition={
+				'conditions' :{
+					'user_id':requestdata.user_id,
+					'type':requestdata.type,
+				}
+			};
+			let result=await DB.find('Address','all',condition);
+			delete requestdata.users;
+			res.status(200).json({
+				'success':true,
+				'message':"Address Listing",
+				'code':200,
+				'body':result
+			});
+		}catch(err){
+			$this.error(res,err);
+		}
+	}
+	/** api for create the post  ***/
+	async create_post(req,res){
+		try{
+			const required = {
+				security_key:req.headers.security_key,
+				authorization_key:req.headers.authorization_key,
+				data:req.body,
+				checkexist:2
+			}	
+			const non_required= {}
+			let requestdata = await App.vaildObject(required,non_required);
+			let total_price=0;
+			for(let price in requestdata.data.product_details){
+				if(requestdata.data.product_details[price].amount){
+					total_price+=requestdata.data.product_details[price].amount;
+				}else{
+					let message="Amount filed is missing product_details at position "+JSON.stringify(requestdata.data.product_details[price]);
+					throw {code:400,message};
+				}
+			}
+			let complete_data={
+				addresses:requestdata.data.address,
+				product_details:requestdata.data.product_details,
+				user_id:requestdata.users.id,
+				amount:total_price
+			};
+			let last_insert_id= await DB.save('create_posts',complete_data);
+			complete_data.id=last_insert_id; 
+			complete_data.status=0; 
+			res.status(200).json({
+				'success':true,
+				'message':"Create Post",
+				'code':200,
+				'body':complete_data
+			});
+		}catch(err){
+			$this.error(res,err);
+		}
+	}
+	/** api for get the post  ***/
+	async get_post(req,res){
+		try{
+			const required = {
+				security_key:req.headers.security_key,
+				authorization_key:req.headers.authorization_key,
+				checkexist:2
+			}	
+			const non_required= {}
+			let requestdata = await App.vaildObject(required,non_required);
+			requestdata.user_id=requestdata.users.id;
+			let condition={
+				'conditions' :{
+					'user_id':requestdata.user_id,
+				}
+			};
+			let result=await DB.find('CreatePost','all',condition);
+			delete requestdata.users;
+			for(let i =0; i<result.length;i++ ){
+				result[i].addresses=JSON.parse(result[i].addresses);
+				result[i].product_details=JSON.parse(result[i].product_details);
+			}	
+			res.status(200).json({
+				'success':true,
+				'message':"Address Listing",
+				'code':200,
+				'body':result
+			});
+		}catch(err){
+			$this.error(res,err);
+		}
+	}
+
+	async update_post(req,res){
+		try{
+			const required = {
+				security_key:req.headers.security_key,
+				authorization_key:req.headers.authorization_key,
+				create_post_id:req.body.create_post_id,
+				checkexist:2
+			}	
+			const non_required= {
+				sender_address_id:req.body.sender_address_id,
+				receiver_address_id:req.body.receiver_address_id,
+				transaction_number:req.body.transaction_number,
+				status:req.body.status,
+				is_payment_done:req.body.is_payment_done
+			}
+			let requestdata = await App.vaildObject(required,non_required);
+			requestdata.id=	requestdata.create_post_id;	
+			DB.save('create_posts',requestdata);
+			res.status(200).json({
+				'success':true,
+				'message':"Post data updated",
+				'code':200,
+				'body':requestdata
+			});
+		}catch(err){
+			$this.error(res,err);
+		}
+	}
+
+		/** get additonal servers   ***/
+	async post_servers(req,res){
+		try{
+			const required = {
+				security_key:req.headers.security_key,
+				authorization_key:req.headers.authorization_key,
+				checkexist:2
+			}	
+			const non_required= {}
+			let requestdata = await App.vaildObject(required,non_required);
+			requestdata.user_id=requestdata.users.id;
+			let result=await DB.Query('select * from additional_services','select');
+			delete requestdata.users;
+			res.status(200).json({
+				'success':true,
+				'message':"Post services",
+				'code':200,
+				'body':result
+			});
+		}catch(err){
+			$this.error(res,err);
+		}
+	}
+
+	async update_address(req,res){
+		try{
+			const required = {
+				security_key:req.headers.security_key,
+				authorization_key:req.headers.authorization_key,
+				address_id:req.body.address_id,
+				checkexist:2
+			}	
+			const non_required= {
+				sender_name:req.body.sender_name,
+				address_line_1:req.body.address_line_1,
+				address_line_2:req.body.address_line_2,
+				city:req.body.city,
+				state:req.body.state,
+				zip_code:req.body.zip_code,
+				country:req.body.country,
+				is_default:req.body.is_default,
+			}
+			let requestdata = await App.vaildObject(required,non_required);
+			console.log(requestdata);
+			requestdata.id=parseInt(requestdata.address_id);
+			await DB.save('users_addresses',requestdata);
+			if(requestdata.is_default==1 && typeof requestdata.is_default!='undefined' ){
+				let update_query="update users_addresses SET is_default=0 where id != "+requestdata.id+" and  user_id = "+requestdata.users.id;
+			    DB.Query(update_query,'update');
+			}
+			 delete requestdata.users;
+			res.status(200).json({
+				'success':true,
+				'message':"Address updated successfully",
+				'code':200,
+				'body':requestdata
 			});
 		}catch(err){
 			$this.error(res,err);
